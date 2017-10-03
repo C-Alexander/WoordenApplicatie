@@ -6,33 +6,43 @@ import scala.collection.mutable.{HashMap, ListBuffer}
 import scala.collection.immutable.SortedSet
 import scala.collection.{SetProxy, mutable}
 
-
-object Tool {
-  private val time:Stopwatch = Stopwatch()
-  private val REGEX:String = "\\, |\\. |\\.\n\n|\\.\n| |\n\n|\n|\\."// using \\W+ is better, but stutters at accents
+/**
+  * A tool to get various useless statistics from text
+  */
+object Tool extends Splitter with Stopwatch {
 
   /**
-    *
+    * Function that counts the words in a string
     * @param text text to count words of
     * @return tuple containing (count, countUnique) as ints.
     */
   def count(text:String): (Int, Int) = {
-    time.measureTime {
-      val strs: Array[String] = text.toLowerCase.split(REGEX)
+    measureTime {
+      val strs: Array[String] = split(text)
       (strs.length, strs.toSet.size)
     }
   }
 
+  /**
+    * Function that sorts the text's words alphabetically (with Z at first, A at the end), newlines separating each word.
+    * @param text The text to sort alphabetically
+    * @return The sorted text
+    */
   def sortAlphabetically(text:String): String = {
-    time.measureTime {
-      (SortedSet[String]()(Ordering[String].reverse) ++ text.toLowerCase.split(REGEX)).mkString("\n")
+    measureTime {
+      (SortedSet[String]()(Ordering[String].reverse) ++ split(text)).mkString("\n")
     }
   }
 
+  /**
+    * Calculates the frequence of words in text
+    * @param text The text to get the frequence from
+    * @return A string of the words, with their frequence next to them, separated by newlines
+    */
   def frequence(text:String): String = {
-    time.measureTime {
+    measureTime {
       val map: mutable.HashMap[String, AtomicInteger] = mutable.HashMap[String, AtomicInteger]() //sadly has to be mutable if we want don't want to manually count every word later...
-      text.toLowerCase.split(REGEX).foreach(s => map.getOrElseUpdate(s, new AtomicInteger(0)).incrementAndGet()) //record occurrence of each word
+      split(text).foreach(s => map.getOrElseUpdate(s, new AtomicInteger(0)).incrementAndGet()) //record occurrence of each word
       // AtomicInteger method results for 290000 words: 195, 100, 104, 101, 113, 135, standard put results: 288, 232, 236, 204, 265, 262. Winner winner chicken dinner!
 
       val sortedMap: mutable.SortedMap[Int, ListBuffer[String]] = mutable.SortedMap[Int, ListBuffer[String]]()
@@ -42,8 +52,13 @@ object Tool {
     }
   }
 
+  /**
+    * Calculates the concordance of words in a text
+    * @param text to get the word concordance of
+    * @return a string of words, with their concordance next to them
+    */
   def concordance(text:String): String = {
-    time.measureTime {
+    measureTime {
       val map: mutable.HashMap[String, mutable.SortedSet[Int]] = new mutable.HashMap[String, mutable.SortedSet[Int]]
       val word: mutable.StringBuilder = new mutable.StringBuilder() //5.1 is the average amount of letters per world, is it too insane to make this the initial size and make the normal increase the deviation?
       var line: Int = 1
